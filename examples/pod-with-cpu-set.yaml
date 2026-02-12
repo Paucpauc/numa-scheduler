@@ -3,9 +3,9 @@ kind: Pod
 metadata:
   name: numa-aware-pod
   annotations:
-    # Привязать к CPU 0,1,2,3
+    # Bind to CPU 0,1,2,3
     cpu-set: "0-3"
-    # Дополнительные аннотации для NUMA
+    # Additional NUMA annotations
     numa-node: "0"
 spec:
   containers:
@@ -24,9 +24,9 @@ kind: Pod
 metadata:
   name: numa-aware-pod-advanced
   annotations:
-    # Привязать к конкретным CPU на разных NUMA узлах
+    # Bind to specific CPUs on different NUMA nodes
     cpu-set: "0,2,8,10"
-    # Указать NUMA узлы
+    # Specify NUMA nodes
     numa-node: "0,1"
 spec:
   containers:
@@ -54,7 +54,7 @@ spec:
       labels:
         app: numa-aware-app
       annotations:
-        # Разные CPU affinity для разных подов
+        # Different CPU affinity for different pods
         cpu-set: "4-7"
         numa-node: "1"
     spec:

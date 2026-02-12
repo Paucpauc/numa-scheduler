@@ -9,17 +9,17 @@ import (
 )
 
 func main() {
-	// Читаем OCI-спецификацию из stdin
+	// Read OCI specification from stdin
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to read from stdin: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Создаем и настраиваем hook
+	// Create and configure hook
 	hook := cpuset.NewHook()
 
-	// Обрабатываем спецификацию
+	// Process specification
 	if err := hook.ProcessFromJSON(data); err != nil {
 		fmt.Fprintf(os.Stderr, "hook processing failed: %v\n", err)
 		os.Exit(1)

@@ -1,12 +1,12 @@
 # NUMA Scheduler
 
-NUMA-aware CPU set scheduler hook для containerd, который позволяет настраивать CPU affinity для контейнеров на основе аннотаций подов.
+NUMA-aware CPU set scheduler hook for containerd that allows configuring CPU affinity for containers based on pod annotations.
 
-## Обзор
+## Overview
 
-Проект предоставляет OCI hook для containerd, который автоматически настраивает CPU affinity (cpuset) для контейнеров на основе аннотаций Kubernetes подов. Это особенно полезно для NUMA-систем, где важно привязывать контейнеры к конкретным CPU узлам для оптимизации производительности.
+The project provides an OCI hook for containerd that automatically configures CPU affinity (cpuset) for containers based on Kubernetes pod annotations. This is especially useful for NUMA systems where it's important to bind containers to specific CPU nodes for performance optimization.
 
-## Архитектура
+## Architecture
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
@@ -22,70 +22,70 @@ NUMA-aware CPU set scheduler hook для containerd, который позвол
                                                └─────────────────┘
 ```
 
-## Функциональность
+## Features
 
-- **Автоматическая настройка CPU affinity** на основе аннотаций подов
-- **Поддержка NUMA-систем** для оптимизации производительности
-- **Интеграция с containerd** через OCI hooks
-- **Гибкая конфигурация** через Helm chart
-- **Минимальный footprint** - бинарник compiled from scratch
+- **Automatic CPU affinity configuration** based on pod annotations
+- **NUMA system support** for performance optimization
+- **Integration with containerd** via OCI hooks
+- **Flexible configuration** through Helm chart
+- **Minimal footprint** - binary compiled from scratch
 
-## Требования
+## Requirements
 
 - Kubernetes 1.20+
 - containerd 1.4+
-- Linux с поддержкой cgroups v1/v2
-- Доступ к `/sys/fs/cgroup` на узлах
+- Linux with cgroups v1/v2 support
+- Access to `/sys/fs/cgroup` on nodes
 
-## Установка
+## Installation
 
-### Быстрая установка
+### Quick Installation
 
 ```bash
-# Клонируйте репозиторий
+# Clone the repository
 git clone https://github.com/andurbanovich/numa-scheduler.git
 cd numa-scheduler
 
-# Соберите и установите
+# Build and install
 make build
 make generate-binary
 ./scripts/deploy.sh
 ```
 
-### Детальная установка
+### Detailed Installation
 
-#### 1. Сборка бинарного файла
+#### 1. Build Binary
 
 ```bash
-# Сборка для всех платформ
+# Build for all platforms
 make build-all
 
-# Или только для текущей платформы
+# Or only for current platform
 make build
 ```
 
-#### 2. Генерация ConfigMap
+#### 2. Generate ConfigMap
 
 ```bash
-# Генерация base64 бинарного файла для ConfigMap
+# Generate base64 binary for ConfigMap
 make generate-binary
 ```
 
-#### 3. Установка через Helm
+#### 3. Install via Helm
 
 ```bash
-# Установка с настройками по умолчанию
+# Install with default settings
 helm install numa-scheduler ./deploy/helm --namespace kube-system
 
-# Или с использованием скрипта
+# Or using script
 ./scripts/deploy.sh
 ```
 
-## Использование
+## Usage
 
-### Настройка подов
+### Pod Configuration
 
-Добавьте аннотацию `cpu-set` к вашему поду для указания CPU affinity:
+Add the `cpu-set` annotation to your pod to specify CPU affinity:
 
 ```yaml
 apiVersion: v1
@@ -93,50 +93,50 @@ kind: Pod
 metadata:
   name: numa-aware-pod
   annotations:
-    cpu-set: "0-3"  # Привязать к CPU 0,1,2,3
+    cpu-set: "0-3"  # Bind to CPU 0,1,2,3
 spec:
   containers:
   - name: app
     image: nginx:latest
 ```
 
-### Примеры использования
+### Usage Examples
 
-#### Привязка к конкретным CPU
+#### Bind to Specific CPUs
 
 ```yaml
 annotations:
   cpu-set: "0,2,4"  # CPU 0, 2, 4
 ```
 
-#### Привязка к диапазону CPU
+#### Bind to CPU Range
 
 ```yaml
 annotations:
-  cpu-set: "0-7"    # CPU с 0 по 7
+  cpu-set: "0-7"    # CPU from 0 to 7
 ```
 
-#### Комбинированная настройка
+#### Combined Configuration
 
 ```yaml
 annotations:
-  cpu-set: "0-3,8-11"  # CPU 0-3 и 8-11
+  cpu-set: "0-3,8-11"  # CPU 0-3 and 8-11
 ```
 
-## Конфигурация
+## Configuration
 
 ### Helm Values
 
-Основные параметры конфигурации:
+Main configuration parameters:
 
 ```yaml
-# Использование кастомного образа вместо ConfigMap
+# Use custom image instead of ConfigMap
 image:
   useCustomImage: false
   repository: numa-scheduler
   tag: "latest"
 
-# Настройки DaemonSet
+# DaemonSet settings
 daemonSet:
   updateStrategy:
     type: RollingUpdate
@@ -146,112 +146,112 @@ daemonSet:
 rbac:
   create: true
 
-# Конфигурация containerd
+# containerd configuration
 containerd:
   updateConfig: true
   configPath: /etc/containerd/config.toml
   backupConfig: true
 
-# Hook настройки
+# Hook settings
 hook:
   binaryPath: /opt/cni/bin/cpuset-hook
   hookType: "createRuntime"
 ```
 
-### Полная конфигурация
+### Full Configuration
 
-Смотрите [`deploy/helm/values.yaml`](deploy/helm/values.yaml) для всех доступных опций.
+See [`deploy/helm/values.yaml`](deploy/helm/values.yaml) for all available options.
 
-## Разработка
+## Development
 
-### Структура проекта
+### Project Structure
 
 ```
 .
-├── cmd/                    # Основные приложения
-│   └── cpuset-hook/       # OCI hook приложение
-├── internal/              # Внутренние пакеты
-│   └── cpuset/           # Логика работы с cpuset
-├── deploy/               # Файлы развертывания
+├── cmd/                    # Main applications
+│   └── cpuset-hook/       # OCI hook application
+├── internal/              # Internal packages
+│   └── cpuset/           # cpuset logic
+├── deploy/               # Deployment files
 │   └── helm/            # Helm chart
-├── scripts/              # Скрипты сборки и развертывания
-├── idea/                 # Идеи и прототипы
-├── Dockerfile           # Dockerfile для сборки образа
-├── Makefile            # Makefile для удобной сборки
-└── README.md           # Документация
+├── scripts/              # Build and deployment scripts
+├── idea/                 # Ideas and prototypes
+├── Dockerfile           # Dockerfile for image build
+├── Makefile            # Makefile for convenient build
+└── README.md           # Documentation
 ```
 
-### Сборка и тестирование
+### Build and Test
 
 ```bash
-# Установка зависимостей
+# Install dependencies
 make deps
 
-# Сборка
+# Build
 make build
 
-# Тесты
+# Tests
 make test
 
-# Сборка Docker образа
+# Build Docker image
 make docker-build
 
-# Линтинг
+# Linting
 make lint
 
-# Проверка безопасности
+# Security check
 make sec
 ```
 
-### Скрипты
+### Scripts
 
-#### Сборка
+#### Build
 
 ```bash
-# Полная сборка
+# Full build
 ./scripts/build.sh all
 
-# Только бинарник
+# Binary only
 ./scripts/build.sh binary
 
-# Только Docker образ
+# Docker image only
 ./scripts/build.sh docker
 ```
 
-#### Развертывание
+#### Deployment
 
 ```bash
-# Установка
+# Install
 ./scripts/deploy.sh
 
-# С кастомными значениями
+# With custom values
 ./scripts/deploy.sh -f custom-values.yaml
 
-# Обновление
+# Upgrade
 ./scripts/deploy.sh -u
 
-# Удаление
+# Uninstall
 ./scripts/deploy.sh -x
 
 # Dry run
 ./scripts/deploy.sh -d
 ```
 
-## Архитектура OCI Hook
+## OCI Hook Architecture
 
-### Поток выполнения
+### Execution Flow
 
-1. **containerd** запускает контейнер
-2. **OCI hook** вызывается на фазе `createRuntime`
-3. **Hook** читает OCI спецификацию из stdin
-4. **Извлекает** аннотации из спецификации
-5. **Определяет** путь к cgroup контейнера
-6. **Записывает** значение в `cpuset.cpus`
-7. **Контейнер** запускается с настроенным CPU affinity
+1. **containerd** starts container
+2. **OCI hook** is called at `createRuntime` phase
+3. **Hook** reads OCI specification from stdin
+4. **Extracts** annotations from specification
+5. **Determines** container cgroup path
+6. **Writes** value to `cpuset.cpus`
+7. **Container** starts with configured CPU affinity
 
-### Код
+### Code
 
-Основная логика находится в [`internal/cpuset/hook.go`](internal/cpuset/hook.go):
+Main logic is located in [`internal/cpuset/hook.go`](internal/cpuset/hook.go):
 
 ```go
 type Hook struct {
@@ -259,13 +259,13 @@ type Hook struct {
 }
 
 func (h *Hook) Process(spec *specs.Spec) error {
-    // Извлечение аннотаций
+    // Extract annotations
     annotations := spec.Annotations
     
-    // Получение cpu-set
+    // Get cpu-set
     cpuSet := annotations["cpu-set"]
     
-    // Настройка cgroup
+    // Configure cgroup
     cgroupPath := spec.Linux.CgroupsPath
     fullPath := filepath.Join(h.cgroupMountPrefix, "cpuset", cgroupPath, "cpuset.cpus")
     
@@ -273,97 +273,97 @@ func (h *Hook) Process(spec *specs.Spec) error {
 }
 ```
 
-## Устранение проблем
+## Troubleshooting
 
-### Проверка работы
+### Check Operation
 
 ```bash
-# Проверка статуса DaemonSet
+# Check DaemonSet status
 kubectl get daemonset numa-scheduler -n kube-system
 
-# Проверка подов
+# Check pods
 kubectl get pods -n kube-system -l app.kubernetes.io/name=numa-scheduler
 
-# Логи пода
+# Pod logs
 kubectl logs -n kube-system -l app.kubernetes.io/name=numa-scheduler
 
-# Проверка ConfigMap
+# Check ConfigMap
 kubectl get configmap numa-scheduler-bin -n kube-system -o yaml
 ```
 
-### Частые проблемы
+### Common Issues
 
-#### Hook не работает
+#### Hook Not Working
 
-1. **Проверьте права доступа** к `/sys/fs/cgroup`
-2. **Убедитесь** что containerd настроен для использования hooks
-3. **Проверьте** что бинарник имеет права на выполнение
+1. **Check permissions** to `/sys/fs/cgroup`
+2. **Ensure** containerd is configured to use hooks
+3. **Check** that binary has execute permissions
 
-#### Контейнер не запускается
+#### Container Not Starting
 
-1. **Проверьте** формат аннотации `cpu-set`
-2. **Убедитесь** что указанные CPU существуют на узле
-3. **Проверьте** логи hook для диагностики
+1. **Check** `cpu-set` annotation format
+2. **Ensure** specified CPUs exist on the node
+3. **Check** hook logs for diagnostics
 
-#### Проблемы с NUMA
+#### NUMA Issues
 
-1. **Проверьте** топологию NUMA: `numactl --hardware`
-2. **Убедитесь** что ядро поддерживает NUMA: `grep NUMA /proc/cpuinfo`
-3. **Проверьте** что cgroups поддерживают cpuset: `mount | grep cpuset`
+1. **Check** NUMA topology: `numactl --hardware`
+2. **Ensure** kernel supports NUMA: `grep NUMA /proc/cpuinfo`
+3. **Check** that cgroups support cpuset: `mount | grep cpuset`
 
-## Производительность
+## Performance
 
-### Метрики
+### Metrics
 
-- **Размер бинарника**: ~2MB (statically linked)
-- **Память**: <1MB
-- **CPU**: <1ms на контейнер
-- **Задержка**: минимальная, выполняется до запуска контейнера
+- **Binary size**: ~2MB (statically linked)
+- **Memory**: <1MB
+- **CPU**: <1ms per container
+- **Latency**: minimal, runs before container start
 
-### Оптимизация
+### Optimization
 
-- **Статическая компиляция** для минимизации зависимостей
-- **Минимальный footprint** через scratch Docker образ
-- **Быстрая обработка** без лишних аллокаций
+- **Static compilation** to minimize dependencies
+- **Minimal footprint** via scratch Docker image
+- **Fast processing** without unnecessary allocations
 
-## Безопасность
+## Security
 
-### Модель безопасности
+### Security Model
 
-- **Требует привилегий** для записи в cgroup fs
-- **Работает** с правами root на узлах
-- **Изолирован** в отдельном контейнере
+- **Requires privileges** to write to cgroup fs
+- **Runs** with root privileges on nodes
+- **Isolated** in separate container
 
-### Рекомендации
+### Recommendations
 
-- **Ограничьте** доступ к ConfigMap с бинарником
-- **Используйте** RBAC для контроля доступа
-- **Регулярно** обновляйте образы
-- **Мониторьте** логи на предмет ошибок
+- **Restrict** access to ConfigMap with binary
+- **Use** RBAC for access control
+- **Regularly** update images
+- **Monitor** logs for errors
 
-## Лицензия
+## License
 
-MIT License - см. файл [LICENSE](LICENSE) для деталей.
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## Вклад
+## Contributing
 
-1. Fork проекта
-2. Создайте feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit изменения (`git commit -m 'Add amazing feature'`)
-4. Push в branch (`git push origin feature/amazing-feature`)
-5. Откройте Pull Request
+1. Fork the project
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-## Поддержка
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/andurbanovich/numa-scheduler/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/andurbanovich/numa-scheduler/discussions)
 - **Email**: andrey.urbanovich@example.com
 
-## Дорожная карта
+## Roadmap
 
-- [ ] Поддержка cgroups v2
-- [ ] Валидация CPU affinity
-- [ ] Метрики и мониторинг
-- [ ] Автоматическое обнаружение NUMA топологии
-- [ ] Поддержка других runtime (CRI-O, docker)
-- [ ] GUI для управления
+- [ ] cgroups v2 support
+- [ ] CPU affinity validation
+- [ ] Metrics and monitoring
+- [ ] Automatic NUMA topology detection
+- [ ] Support for other runtimes (CRI-O, docker)
+- [ ] GUI for management

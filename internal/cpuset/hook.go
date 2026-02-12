@@ -13,42 +13,42 @@ const (
 	cgroupMountPrefix = "/sys/fs/cgroup"
 )
 
-// Hook реализует OCI hook для настройки cpuset
+// Hook implements OCI hook for cpuset configuration
 type Hook struct {
 	cgroupMountPrefix string
 }
 
-// NewHook создает новый экземпляр Hook
+// NewHook creates a new Hook instance
 func NewHook() *Hook {
 	return &Hook{
 		cgroupMountPrefix: cgroupMountPrefix,
 	}
 }
 
-// Process обрабатывает OCI спецификацию и настраивает cpuset
+// Process processes OCI specification and configures cpuset
 func (h *Hook) Process(spec *specs.Spec) error {
-	// Извлекаем аннотации пода
+	// Extract pod annotations
 	annotations := spec.Annotations
 	if annotations == nil {
 		return fmt.Errorf("no annotations found")
 	}
 
-	// Получаем требуемый cpuset из аннотации "cpu-set"
+	// Get required cpuset from "cpu-set" annotation
 	cpuSet, ok := annotations["cpu-set"]
 	if !ok {
 		return fmt.Errorf("annotation 'cpu-set' not found")
 	}
 
-	// Определяем путь к cgroup контейнера
+	// Determine container cgroup path
 	cgroupPath := spec.Linux.CgroupsPath
 	if cgroupPath == "" {
 		return fmt.Errorf("cgroup path is empty")
 	}
 
-	// Формируем полный путь к cpuset.cpus
+	// Form full path to cpuset.cpus
 	fullPath := filepath.Join(h.cgroupMountPrefix, "cpuset", cgroupPath, "cpuset.cpus")
 
-	// Записываем значение
+	// Write value
 	if err := os.WriteFile(fullPath, []byte(cpuSet), 0644); err != nil {
 		return fmt.Errorf("failed to write cpuset: %w", err)
 	}
@@ -57,7 +57,7 @@ func (h *Hook) Process(spec *specs.Spec) error {
 	return nil
 }
 
-// ProcessFromJSON читает OCI спецификацию из JSON и обрабатывает ее
+// ProcessFromJSON reads OCI specification from JSON and processes it
 func (h *Hook) ProcessFromJSON(data []byte) error {
 	var spec specs.Spec
 	if err := json.Unmarshal(data, &spec); err != nil {
