@@ -10,11 +10,11 @@ keywords:
   - scheduler
   - containerd
   - kubernetes
-home: https://github.com/andurbanovich/numa-scheduler
+home: https://github.com/Paucpauc/numa-scheduler
 sources:
-  - https://github.com/andurbanovich/numa-scheduler
+  - https://github.com/Paucpauc/numa-scheduler
 maintainers:
-  - name: andurbanovich
-    email: andrey.urbanovich@example.com
+  - name: Paucpauc
+    email: pauc.pauc@gmail.com
 annotations:
   category: Infrastructure

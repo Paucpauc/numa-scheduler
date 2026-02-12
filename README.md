@@ -43,7 +43,7 @@ The project provides an OCI hook for containerd that automatically configures CP
 
 ```bash
 # Clone the repository
-git clone https://github.com/andurbanovich/numa-scheduler.git
+git clone https://github.com/Paucpauc/numa-scheduler.git
 cd numa-scheduler
 
 # Build and install
@@ -355,9 +355,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/andurbanovich/numa-scheduler/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/andurbanovich/numa-scheduler/discussions)
-- **Email**: andrey.urbanovich@example.com
+- **Issues**: [GitHub Issues](https://github.com/Paucpauc/numa-scheduler/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Paucpauc/numa-scheduler/discussions)
+- **Email**: pauc.pauc@gmail.com
 
 ## Roadmap
 
