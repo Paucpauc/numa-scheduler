@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/andurbanovich/numa-scheduler/internal/cpuset"
+	"github.com/paucpauc/numa-scheduler/internal/cpuset"
 )
 
 func main() {
