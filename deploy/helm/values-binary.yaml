@@ -1,0 +1,93 @@
+# Values file for deployment with binary in ConfigMap
+# This file should be used after running `make generate-binary`
+
+# Use binary from ConfigMap (not custom image)
+image:
+  useCustomImage: false
+
+# Binary content will be automatically generated
+binary:
+  # This will be replaced by `make generate-binary`
+  content: "{{ placeholder }}"
+  permissions: "0755"
+
+# Enable containerd config update
+containerd:
+  updateConfig: true
+  configPath: /etc/containerd/config.toml
+  backupConfig: true
+
+# Hook configuration
+hook:
+  binaryPath: /opt/cni/bin/cpuset-hook
+  hookType: "createRuntime"
+  env: []
+  args: []
+
+# DaemonSet configuration
+daemonSet:
+  revisionHistoryLimit: 3
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  terminationGracePeriodSeconds: 1
+
+# Node selector for Linux nodes
+nodeSelector:
+  kubernetes.io/os: linux
+
+# Tolerations for control plane nodes
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+# RBAC configuration
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["nodes"]
+      verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["get", "list", "watch"]
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Resources
+resources:
+  limits:
+    cpu: 100m
+    memory: 64Mi
+  requests:
+    cpu: 10m
+    memory: 32Mi
+
+# Security context
+securityContext:
+  runAsNonRoot: false
+  runAsUser: 0
+  fsGroup: 0
+
+# Container security context
+containerSecurityContext:
+  privileged: true
+  allowPrivilegeEscalation: true
+  readOnlyRootFilesystem: false
+
+# Host settings
+hostPID: true
+
+# Logging
+logging:
+  level: "info"
+  format: "text"

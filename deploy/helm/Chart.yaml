@@ -1,0 +1,20 @@
+apiVersion: v2
+name: numa-scheduler
+description: A Helm chart for NUMA-aware CPU set scheduler hook for containerd
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - numa
+  - cpu
+  - scheduler
+  - containerd
+  - kubernetes
+home: https://github.com/andurbanovich/numa-scheduler
+sources:
+  - https://github.com/andurbanovich/numa-scheduler
+maintainers:
+  - name: andurbanovich
+    email: andrey.urbanovich@example.com
+annotations:
+  category: Infrastructure

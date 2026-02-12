@@ -1,0 +1,13 @@
+{{- if not .Values.image.useCustomImage }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "numa-scheduler.fullname" . }}-bin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "numa-scheduler.labels" . | nindent 4 }}
+binaryData:
+  cpuset-hook: |-
+    {{ .Values.binary.content }}
+{{- end }}

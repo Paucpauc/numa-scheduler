@@ -1,0 +1,90 @@
+{{- if .Values.containerd.updateConfig }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "numa-scheduler.fullname" . }}-containerd-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "numa-scheduler.labels" . | nindent 4 }}
+data:
+  config.toml: |
+    version = 2
+
+    [plugins."io.containerd.runtime.v1.linux"]
+      shim_debug = true
+
+    [plugins."io.containerd.runtime.v2.task"]
+      platforms = ["linux/amd64"]
+
+    [plugins."io.containerd.cri.v1.runtime".containerd.runtimes.runc]
+      runtime_type = "io.containerd.runc.v2"
+
+    [plugins."io.containerd.cri.v1.runtime".containerd.runtimes.runc.options]
+      BinaryName = "runc"
+      SystemdCgroup = true
+
+      # Register OCI hook
+      [[plugins."io.containerd.cri.v1.runtime".containerd.runtimes.runc.options.Hooks]]
+        path = "{{ .Values.hook.binaryPath }}"
+        type = "{{ .Values.hook.hookType }}"
+        env = {{ .Values.hook.env | toJson }}
+        args = {{ .Values.hook.args | toJson }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "numa-scheduler.fullname" . }}-update-script
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "numa-scheduler.labels" . | nindent 4 }}
+data:
+  update-containerd.sh: |
+    #!/bin/sh
+    set -e
+
+    CONFIG_PATH="{{ .Values.containerd.configPath }}"
+    BACKUP_PATH="${CONFIG_PATH}.backup"
+    TEMP_PATH="${CONFIG_PATH}.tmp"
+
+    echo "Updating containerd configuration..."
+
+    # Backup original config if it exists and backup is enabled
+    {{- if .Values.containerd.backupConfig }}
+    if [ -f "$CONFIG_PATH" ] && [ ! -f "$BACKUP_PATH" ]; then
+        echo "Creating backup of original config..."
+        cp "$CONFIG_PATH" "$BACKUP_PATH"
+    fi
+    {{- end }}
+
+    # Copy new config
+    cp /tmp/containerd-config/config.toml "$TEMP_PATH"
+
+    # Validate config
+    if command -v containerd >/dev/null 2>&1; then
+        echo "Validating containerd configuration..."
+        if ! containerd config dump --config "$TEMP_PATH" >/dev/null 2>&1; then
+            echo "ERROR: Invalid containerd configuration!"
+            rm -f "$TEMP_PATH"
+            exit 1
+        fi
+    fi
+
+    # Apply new config
+    mv "$TEMP_PATH" "$CONFIG_PATH"
+    echo "Containerd configuration updated successfully!"
+
+    # Restart containerd service
+    if command -v systemctl >/dev/null 2>&1; then
+        echo "Restarting containerd service..."
+        systemctl restart containerd
+    elif command -v service >/dev/null 2>&1; then
+        echo "Restarting containerd service..."
+        service containerd restart
+    else
+        echo "WARNING: Could not restart containerd service automatically"
+        echo "Please restart containerd manually"
+    fi
+
+    echo "Setup completed!"
+{{- end }}

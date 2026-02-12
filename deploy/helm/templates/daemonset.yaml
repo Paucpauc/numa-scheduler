@@ -1,0 +1,146 @@
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "numa-scheduler.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create a default fully qualified app name.
+*/}}
+{{- define "numa-scheduler.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "numa-scheduler.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "numa-scheduler.labels" -}}
+helm.sh/chart: {{ include "numa-scheduler.chart" . }}
+{{ include "numa-scheduler.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "numa-scheduler.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "numa-scheduler.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "numa-scheduler.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "numa-scheduler.labels" . | nindent 4 }}
+spec:
+  revisionHistoryLimit: {{ .Values.daemonSet.revisionHistoryLimit }}
+  updateStrategy:
+    {{- toYaml .Values.daemonSet.updateStrategy | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "numa-scheduler.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "numa-scheduler.selectorLabels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+        {{- toYaml .Values.podLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "numa-scheduler.fullname" . }}
+      {{- end }}
+      hostPID: {{ .Values.hostPID }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      {{- if .Values.image.useCustomImage }}
+      initContainers:
+        - name: install-hook
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["cp", "/cpuset-hook", "/host/opt/cni/bin/cpuset-hook"]
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+      {{- else }}
+      initContainers:
+        - name: install-hook
+          image: alpine:3.19
+          command: ["cp", "/cpuset-hook", "/host/opt/cni/bin/cpuset-hook"]
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: hook-bin
+              mountPath: /host/opt/cni/bin
+            - name: hook-src
+              mountPath: /cpuset-hook
+              subPath: cpuset-hook
+      {{- end }}
+      {{- if .Values.additionalInitContainers }}
+      {{- toYaml .Values.additionalInitContainers | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: pause
+          image: gcr.io/google_containers/pause
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.additionalContainers }}
+        {{- toYaml .Values.additionalContainers | nindent 8 }}
+        {{- end }}
+      volumes:
+        {{- if .Values.image.useCustomImage }}
+        {{- toYaml .Values.volumes | nindent 8 }}
+        {{- else }}
+        - name: hook-bin
+          hostPath:
+            path: /opt/cni/bin
+            type: DirectoryOrCreate
+        - name: hook-src
+          configMap:
+            name: {{ include "numa-scheduler.fullname" . }}-bin
+            defaultMode: {{ .Values.binary.permissions }}
+        {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.daemonSet.terminationGracePeriodSeconds }}
